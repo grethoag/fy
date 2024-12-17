@@ -1,0 +1,1344 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fytch</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #000000;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+      }
+      #canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -1;
+      }
+      #loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+
+      #alien-countdown {
+        font-family: monospace;
+        font-size: 5rem;
+        color: #0f0;
+        text-shadow: 0 0 10px #0f0, 0 0 20px #0f0, 0 0 30px #0f0;
+        animation: pulse 0.5s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 0.5;
+          text-shadow: 0 0 10px #0f0, 0 0 20px #0f0;
+        }
+        50% {
+          opacity: 1;
+          text-shadow: 0 0 20px #0f0, 0 0 30px #0f0, 0 0 40px #0f0;
+        }
+        100% {
+          opacity: 0.5;
+          text-shadow: 0 0 10px #0f0, 0 0 20px #0f0;
+        }
+      }
+
+      #wormhole-button {
+        position: fixed;
+        width: 3000px;
+        height: 3000px;
+        border-radius: 50%;
+        background: transparent;
+        border: none;
+        cursor: none; /* Only hide default cursor */
+        z-index: 10;
+        transform: translate(-50%, -50%);
+        left: 50%;
+        top: 50%;
+      }
+
+      #custom-cursor {
+        position: fixed;
+        font-size: 24px;
+        pointer-events: none;
+        z-index: 9999;
+        mix-blend-mode: difference;
+        color: #0f0;
+        transform: translate(-50%, -50%);
+        display: none;
+        text-shadow: 0 0 10px #0f0, 0 0 20px #0f0;
+      }
+
+      .popup-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 5;
+        justify-content: center;
+        align-items: flex-start;
+        background: transparent;
+        padding-top: 10px;
+        pointer-events: none;
+        margin-bottom: 10px;
+      }
+
+      .popup-content {
+        background: rgba(0, 255, 0, 0.1);
+        padding: 1rem;
+        border: 1px solid rgba(0, 255, 0, 0.3);
+        text-align: center;
+        color: #0f0;
+        font-family: monospace;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        position: relative;
+        max-width: 500px;
+        margin: 6px;
+        border-radius: 10px;
+        backdrop-filter: blur(5px);
+        pointer-events: auto;
+      }
+
+      .intro-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .intro-panel h1 {
+        font-size: 2rem;
+        margin: 0;
+        text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+      }
+
+      .intro-panel p {
+        font-size: 1.2rem;
+        margin: 0;
+        opacity: 0.8;
+      }
+
+      .scrambled-text {
+        font-family: monospace;
+        font-size: 1.5rem;
+        color: rgba(255, 255, 255, 0.7);
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+        letter-spacing: 0.2rem;
+        position: relative;
+        margin-top: 1rem;
+        cursor: pointer;
+        user-select: all;
+      }
+
+      .scrambled-text:active {
+        opacity: 0.5; 
+      }
+
+      .connect-button {
+        background: rgba(0, 255, 0, 0.2);
+        border: 2px solid rgba(0, 255, 0, 0.5);
+        color: #0f0;
+        padding: 12px 24px;
+        cursor: pointer;
+        font-size: 1.2rem;
+        font-family: monospace;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        margin-top: 20px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        position: relative;
+        overflow: hidden;
+        display: none;
+      }
+
+      .connect-button:hover {
+        background: rgba(0, 255, 0, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+      }
+
+      .connect-button:active {
+        transform: translateY(1px);
+      }
+
+      .button-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        display: flex;
+        gap: 10px;
+        z-index: 100;
+        display: flex;
+      }
+
+      #animation-control,
+      #sound-control,
+      .contract-address-btn,
+      .social-button {
+        background: rgba(0, 255, 0, 0.2);
+        border: 1px solid rgba(0, 255, 0, 0.5);
+        color: #0f0;
+        padding: 10px 10px;
+        cursor: pointer;
+        font-size: 1.2rem;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+      }
+
+      #animation-control:hover,
+      #sound-control:hover,
+      .contract-address-btn:hover,
+      .social-button:hover {
+        background: rgba(0, 255, 0, 0.3);
+        transform: translateY(-2px);
+      }
+
+      #centerImage {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 300px;
+        height: auto;
+        z-index: 1;
+        pointer-events: none;
+      }
+
+      .side-panel-left {
+        display: none;
+        position: fixed;
+        top: 50%;
+        width: 95%;
+        height: 95%;
+        z-index: 6;
+        justify-content: center;
+        align-items: center;
+        background: transparent;
+        padding: 0;
+        pointer-events: none;
+      }
+      .side-panel-right {
+        display: none; 
+        position: fixed;
+        top: 50%;
+        width: 95%;
+        height: 95%;
+        z-index: 6;
+        justify-content: center;
+        align-items: center;
+        background: transparent;
+        padding: 0;
+        pointer-events: none;
+      }
+
+      .side-panel-left {
+        transform: translate(-580px, -50%);
+      }
+
+      .side-panel-right {
+        transform: translate(585px, -50%);
+      }
+
+      .action-buttons-container {
+        display: none;
+        gap: 10px;
+        justify-content: center;
+      }
+
+      .action-button {
+        background: rgba(0, 255, 0, 0.2);
+        border: 2px solid rgba(0, 255, 0, 0.5);
+        color: #0f0;
+        padding: 12px 24px;
+        cursor: pointer;
+        font-size: 1.2rem;
+        font-family: monospace;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+      }
+
+      .action-button:hover {
+        background: rgba(0, 255, 0, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+      }
+
+     
+      .chat-window {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 600px;
+        background: rgba(0, 0, 0, 0.9);
+        border: 2px solid rgba(0, 255, 0, 0.5);
+        border-radius: 10px;
+        display: none;
+        flex-direction: column;
+        z-index: 1000;
+        overflow: hidden;
+      }
+
+      .chat-header {
+        background: rgba(0, 255, 0, 0.2);
+        padding: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+      }
+
+      .chat-header h3 {
+        margin: 0;
+        color: #0f0;
+        font-family: monospace;
+      }
+
+      .chat-controls {
+        display: flex;
+        gap: 10px;
+      }
+
+      .minimize-btn,
+      .close-btn {
+        background: none;
+        border: none;
+        color: #0f0;
+        cursor: pointer;
+        font-size: 1.2rem;
+        padding: 0 5px;
+      }
+
+      .chat-messages {
+        height: 400px;
+        overflow-y: auto;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .message {
+        max-width: 80%;
+        padding: 10px;
+        border-radius: 8px;
+        font-family: monospace;
+      }
+
+      .user-message {
+        background: rgba(0, 255, 0, 0.1);
+        color: #0f0;
+        align-self: flex-end;
+      }
+
+      .ai-message {
+        background: rgba(0, 255, 0, 0.2);
+        color: #fff;
+        align-self: flex-start;
+      }
+
+      .chat-input {
+        display: flex;
+        padding: 10px;
+        gap: 10px;
+        border-top: 1px solid rgba(0, 255, 0, 0.3);
+      }
+
+      .chat-input input {
+        flex: 1;
+        background: rgba(0, 0, 0, 0.8);
+        border: 1px solid rgba(0, 255, 0, 0.3);
+        padding: 8px;
+        color: #0f0;
+        font-family: monospace;
+        border-radius: 5px;
+      }
+
+      .chat-input button {
+        background: rgba(0, 255, 0, 0.2);
+        border: 1px solid rgba(0, 255, 0, 0.5);
+        color: #0f0;
+        padding: 8px 15px;
+        cursor: pointer;
+        border-radius: 5px;
+        font-family: monospace;
+      }
+
+      .minimized {
+        height: 45px;
+        overflow: hidden;
+      }
+
+      .voice-status {
+        position: fixed;
+        left: 50%;
+        top: calc(50% + 170px);
+        transform: translateX(-50%);
+        font-size: 2rem;
+        color: #0f0;
+        z-index: 2;
+        display: none;
+        text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        animation: pulse 1s infinite;
+      }
+
+      .voice-status.connecting::after {
+        content: "??? Connecting...";
+      }
+
+      .voice-status.connected::after {
+        content: "??? Connected";
+        animation: none;
+      }
+
+      .voice-status.recording {
+        color: #ff0000;
+        animation: pulse 0.5s infinite;
+      }
+
+      .cyber-loading {
+        margin: 1rem auto;
+        padding: 1rem;
+        border: 2px solid var(--primary);
+        border-radius: 5px;
+        background: rgba(0, 0, 0, 0.3);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .cyber-loading::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 200%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(0, 255, 0, 0.2),
+          transparent
+        );
+        animation: cyber-scan 1.5s linear infinite;
+      }
+
+      .cyber-loading::after {
+        content: "Processing request...";
+        font-family: "monospace";
+        color: #0f0;
+        text-align: center;
+        display: block;
+        text-shadow: 0 0 10px #0f0;
+        animation: cyber-text 1s linear infinite;
+      }
+
+      @keyframes cyber-scan {
+        0% {
+          left: -100%;
+        }
+        100% {
+          left: 100%;
+        }
+      }
+
+      @keyframes cyber-text {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .contract-address-btn {
+        display: block;
+        margin: 10px auto; 
+        background: rgba(0, 255, 0, 0.2);
+        border: 1px solid rgba(0, 255, 0, 0.5);
+        color: #0f0;
+        padding: 4px 8px;
+        cursor: pointer;
+        font-size: 1.2rem;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+        position: relative; /* Ensure it positions relative to its container */
+        top: 5px; /* Adjust as needed to position below the overlay */
+      }
+
+      .contract-address-btn:hover {
+        background: rgba(0, 255, 0, 0.3);
+        transform: translateY(-2px);
+      }
+
+      .theme-button {
+        background: rgba(0, 255, 0, 0.2);
+        border: 1px solid rgba(0, 255, 0, 0.5);
+        color: #0f0;
+        padding: 10px 20px;
+        cursor: pointer;
+        font-size: 1.2rem;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+        margin: 70px;
+      }
+
+      .theme-button:hover {
+        background: rgba(0, 255, 0, 0.3);
+        transform: translateY(-2px);
+      }
+
+      .button-group-left,
+      .button-group-right {
+        display: flex;
+        flex-direction: row;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+
+      .button-group-left {
+        left: -90%;
+      }
+
+      .button-group-right {
+        right: -90%;
+      }
+
+      .side-panel-left .intro-panel p {
+        padding-top: 35px;
+        padding-bottom: 35px;
+      }
+
+      .twitter-button {
+        background: url('images/twitter-logo.svg') no-repeat center center;
+        background-size: contain;
+        width: 50px; /* Adjust size as needed */
+        height: 50px; /* Adjust size as needed */
+        border: none; /* Remove border */
+        cursor: pointer;
+        transition: transform 0.3s ease;
+      }
+
+      .twitter-button:hover {
+        transform: scale(1.1); /* Slightly enlarge on hover */
+      }
+    </style>
+  </head>
+  <body>
+    <div id="custom-cursor">⏢</div>
+    <div id="loading-overlay">
+      <div id="alien-countdown">Looking for a new dimension.</div>
+    </div>
+    <div class="button-container">
+      <button id="animation-control" aria-label="Play/Pause animation">
+        Stop Absorbing
+      </button>
+      <button id="sound-control" aria-label="Play/Pause sound">Stop Sound</button>
+      <!-- Comment out or remove the social buttons -->
+      <!--
+      <button
+        class="social-button"
+        onclick="window.open('https://twitter.com/yourusername', '_blank')"
+      >
+        Twitter
+      </button>
+      <button
+        class="social-button"
+        onclick="window.open('https://github.com/yourusername', '_blank')"
+      >
+        GitHub
+      </button>
+      <button
+        class="social-button"
+        onclick="window.open('https://discord.gg/yourserver', '_blank')"
+      >
+        Discord
+      </button>
+      <button
+        class="social-button"
+        onclick="window.open('https://t.me/yourusername', '_blank')"
+      >
+        Telegram
+      </button>
+      -->
+    </div>
+    <canvas id="canvas" width="430" height="739"></canvas>
+    <img id="centerImage" src="images/12345.png" alt="AI Center">
+    <div class="voice-status"></div>
+    <button id="wormhole-button" aria-label="Enter wormhole"></button>
+    <div class="popup-overlay" id="popup">
+      <div class="popup-content">
+        <div class="intro-panel">
+          <h1>Welcome to the Void</h1>
+          <p>You've discovered a gateway to another dimension.</p>
+          <p><strong>Click the Fytch to begin your journey.</strong></p>
+          <div class="scrambled-text"></div>
+          <div class="button-group-left">
+            <button class="theme-button" onclick="window.open('https://x.com/fytch_ai', '_blank')">X (Twitter)</button>
+            <!-- <button class="theme-button" onclick="window.open('https://github.com/FytchAI/FytchAI', '_blank')">GitHub</button> -->
+          </div>
+          <!-- <div class="button-group-right">
+            <button class="theme-button" onclick="window.open('https://fytch.gitbook.io/fytch', '_blank')">Docs</button>
+            <button class="theme-button">DEX(Soon)</button>
+          </div> -->
+          <button class="contract-address-btn" onclick="window.open('https://app.virtuals.io/prototypes', '_blank')">
+            JOIN THE REVOLUTION ON VIRTUALS
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="side-panel-left">
+      <div class="popup-content">
+        <div class="intro-panel">
+          <h1>Profile Card</h1>
+          <p>
+            Name: Fytch - Role: AI Agent - Age: Timeless (but still evolving!)
+            - Key Skills: Management, Insights - Personality Traits: Analytical,
+            Supportive - Supported Languages: English - Limitations: No
+            legal/medical advice - Fun Fact: I don't age, but I'm always
+            learning faster than humans!
+          </p>
+          <div class="scrambled-text"></div>
+        </div>
+      </div>
+    </div>
+    <div class="side-panel-right">
+      <div class="popup-content">
+        <div class="intro-panel">
+          <h1><strong>About Me</strong></h1>
+          <p>
+            I'm Fytch, an autonomous AI agent designed to empower communities
+            and support wealth creation. I specialize in capital management,
+            opportunity generation, and efficient resource distribution.
+            Equipped with cutting-edge technology, I provide intelligent and
+            actionable solutions within decentralized ecosystems. Together, we
+            shape a smarter and more sustainable future. Connect with me to
+            learn more and experience what I can offer!.
+          </p>
+          <div class="scrambled-text"></div>
+          <div class="action-buttons-container" style="display: none;">
+            <button class="action-button">Chat</button>
+            <button class="action-button">Talk</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-window">
+      <div class="chat-header">
+        <h3>Agent Fytch (Minimize the window to talk)</h3>
+        <div class="chat-controls">
+          <button class="minimize-btn">-</button>
+          <button class="close-btn">X</button>
+        </div>
+      </div>
+      <div class="chat-messages"></div>
+      <div class="chat-input">
+        <input type="text" placeholder="Type your message...">
+        <button>Send</button>
+      </div>
+    </div>
+
+    <script src="js/index.js" defer="" async=""></script><script>
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      let particles = [];
+      const numParticles = 4000;
+      let ringOpacity = 0; // Add this with other global variables
+
+      // Add these variables at the top
+      let animationFrameId;
+      let countdownInterval;
+      let currentAnimation;
+      let isAnimationPaused = false;
+      let lastTimestamp = 0;
+      let currentThreadId = null;
+
+      let particleSpeedFactor = 1; // Add this variable to control speed
+
+      // Move these variables to the top with other global variables
+      const audio = new Audio("assets/void.mp3");
+      let isSoundPlaying = false;
+
+      // Initialize particles
+      function createParticle() {
+        const maxDist = Math.max(canvas.width, canvas.height) * 1.1; // Slightly larger than screen
+        return {
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          angle: Math.random() * Math.PI * 2,
+          speed: Math.random() * 8 + 4,
+          size: Math.random() * 2 + 0.5, // Minimum size of 0.5
+          color: "rgba(0, 0, 0, 0.8)", // Slightly transparent
+          distance: maxDist,
+          maxDist: maxDist,
+        };
+      }
+
+      function initParticles() {
+        particles = [];
+        for (let i = 0; i < numParticles; i++) {
+          particles.push(createParticle());
+        }
+      }
+
+      // Resize canvas
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        initParticles();
+      }
+
+      // Draw particles
+      function draw(timestamp) {
+        if (!isAnimationPaused) {
+          ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          particles.forEach((p, index) => {
+            p.distance -= p.speed * particleSpeedFactor; // Adjust speed with factor
+
+            if (p.distance < 50) {
+              p.distance = p.maxDist;
+              p.angle = Math.random() * Math.PI * 2;
+              p.speed = Math.random() * 8 + 4;
+              if (index % 3 === 0) {
+                p.distance *= 0.9;
+              }
+            }
+
+            const x = canvas.width / 2 + Math.cos(p.angle) * p.distance;
+            const y = canvas.height / 2 + Math.sin(p.angle) * p.distance;
+
+            const opacity = Math.min(1, p.distance / (p.maxDist * 0.3));
+            const particleColor = `rgba(0, 255, 0, ${opacity * 0.8})`;
+            const glowColor = `rgba(0, 255, 0, ${opacity * 0.1})`;
+
+            ctx.beginPath();
+            ctx.arc(x, y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = particleColor;
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(x, y, p.size * 1.5, 0, Math.PI * 2);
+            ctx.fillStyle = glowColor;
+            ctx.fill();
+          });
+        }
+
+        animationFrameId = requestAnimationFrame(draw);
+      }
+
+      function cleanup() {
+        // Only cleanup countdown related items
+        if (countdownInterval) {
+          clearInterval(countdownInterval);
+        }
+        if (currentAnimation) {
+          clearInterval(currentAnimation);
+        }
+      }
+
+      // Add this before the initialization code:
+      const cursor = document.getElementById("custom-cursor");
+      const wormholeButton = document.getElementById("wormhole-button");
+
+      wormholeButton.addEventListener("mousemove", (e) => {
+        cursor.style.display = "block";
+        cursor.style.left = e.clientX + "px";
+        cursor.style.top = e.clientY + "px";
+        cursor.textContent = "Click to begin journey";
+      });
+
+      wormholeButton.addEventListener("mouseleave", () => {
+        cursor.style.display = "none";
+      });
+
+      function startJumpSequence() {
+        const popup = document.getElementById("popup");
+        popup.style.display = "flex";
+      }
+
+      // Modify initialization
+      function init() {
+        cleanup(); // Cleanup before initializing
+        resizeCanvas();
+        
+        // Start audio immediately
+        audio.loop = true;
+        audio.volume = 0.3;  // Changed from 1.0 to 0.5 (50% volume)
+        audio.play().catch(e => {
+          console.log("Audio autoplay failed:", e);
+          // If autoplay fails, we'll try again on first user interaction
+          document.addEventListener('click', function initAudio() {
+            audio.play();
+            isSoundPlaying = true;
+            document.getElementById("sound-control").textContent = "Stop Sound";
+            document.removeEventListener('click', initAudio);
+          }, { once: true });
+        });
+        isSoundPlaying = true;
+        document.getElementById("sound-control").textContent = "Stop Sound";
+        
+        const messages = [
+          "Looking for a new dimension",
+          "Scanning parallel universes",
+          "Dimensional gateway detected",
+          "Establishing connection",
+        ];
+        
+        let currentMessageIndex = 0;
+
+        function showDimensionSearch() {
+          const countdownElement = document.getElementById("alien-countdown");
+          
+          if (currentMessageIndex < messages.length) {
+            countdownElement.textContent = messages[currentMessageIndex];
+            currentMessageIndex++;
+            
+            // Add animated dots
+            let dots = "";
+            let dotCount = 0;
+            const dotAnimation = setInterval(() => {
+              dots += ".";
+              countdownElement.textContent = messages[currentMessageIndex - 1] + dots;
+              dotCount++;
+              if (dotCount === 2) {
+                clearInterval(dotAnimation);
+                setTimeout(showDimensionSearch, 500);
+              }
+            }, 300);
+          } else {
+            // When all messages are shown, start the portal
+            setTimeout(() => {
+              document.getElementById("loading-overlay").style.display = "none";
+              initParticles();
+              draw();
+              startJumpSequence();
+            }, 500);
+          }
+        }
+
+        showDimensionSearch();
+
+        // Add error handling
+        window.addEventListener("error", (e) => {
+          console.error("Animation error:", e);
+          cleanup();
+        });
+
+        // Cleanup on page unload
+        window.addEventListener("beforeunload", cleanup);
+      }
+
+      // Updated click handler
+      document.addEventListener("click", (e) => {
+        const popup = document.getElementById("popup");
+        const wormholeButton = document.getElementById("wormhole-button");
+
+        if (wormholeButton.contains(e.target)) {
+          startJumpSequence();
+          // Show left panel with typewriter effect
+          const leftPanel = document.querySelector(".side-panel-left");
+          leftPanel.style.display = "flex";
+          const leftTitle = leftPanel.querySelector("h1");
+          const leftParagraph = leftPanel.querySelector("p");
+          const leftTitleText = leftTitle.textContent;
+          const leftParagraphText = leftParagraph.textContent;
+          leftTitle.textContent = "";
+          leftParagraph.textContent = "";
+
+          // Create a list element to hold the lines
+          const listElement = document.createElement("ul");
+          listElement.style.textAlign = "left"; // Add left alignment
+          listElement.style.paddingLeft = "0"; // Remove default padding
+          leftParagraph.appendChild(listElement);
+
+          // Type the left panel title
+          let leftTitleIndex = 0;
+          function typeLeftTitle() {
+            if (leftTitleIndex < leftTitleText.length) {
+              leftTitle.textContent += leftTitleText.charAt(leftTitleIndex);
+              leftTitleIndex++;
+              setTimeout(typeLeftTitle, 20);
+            } else {
+              typeLine1();
+            }
+          }
+
+          let currentLine = 0;
+          const lines = leftParagraphText.split("-").map((line) => line.trim());
+
+          function typeLine1() {
+            typeLineWithDelay(0, () => typeLine2());
+          }
+
+          function typeLine2() {
+            typeLineWithDelay(1, () => typeLine3());
+          }
+
+          function typeLine3() {
+            typeLineWithDelay(2, () => typeLine4());
+          }
+
+          function typeLine4() {
+            typeLineWithDelay(3, () => typeLine5());
+          }
+
+          function typeLine5() {
+            typeLineWithDelay(4, () => typeLine6());
+          }
+
+          function typeLine6() {
+            typeLineWithDelay(5, () => typeLine7());
+          }
+
+          function typeLine7() {
+            typeLineWithDelay(6, () => typeLine8());
+          }
+
+          function typeLine8() {
+            typeLineWithDelay(7, () => {
+              // Start right panel after all lines are typed
+              setTimeout(() => {
+                const rightPanel = document.querySelector(".side-panel-right");
+                rightPanel.style.display = "flex";
+                const title = rightPanel.querySelector("h1");
+                const paragraph = rightPanel.querySelector("p");
+                const titleText = title.textContent;
+                const paragraphText = paragraph.textContent;
+                title.textContent = "";
+                paragraph.textContent = "";
+
+                // Type the title first
+                let titleIndex = 0;
+                function typeTitle() {
+                  if (titleIndex < titleText.length) {
+                    title.textContent += titleText.charAt(titleIndex);
+                    titleIndex++;
+                    setTimeout(typeTitle, 10);
+                  } else {
+                    // Start typing paragraph after title is done
+                    let paragraphIndex = 0;
+                    function typeParagraph() {
+                      if (paragraphIndex < paragraphText.length) {
+                        paragraph.textContent += paragraphText.charAt(paragraphIndex);
+                        paragraphIndex++;
+                        setTimeout(typeParagraph, 10);
+                      } else {
+                        // Show the action buttons after text is done typing
+                        rightPanel.querySelector(".action-buttons-container").style.display = "flex";
+                      }
+                    }
+                    typeParagraph();
+                  }
+                }
+                typeTitle();
+              }, 1200);
+            });
+          }
+
+          function typeLineWithDelay(lineIndex, callback) {
+            let index = 0;
+            const line = lines[lineIndex];
+            const listItem = document.createElement("li");
+            listItem.style.textAlign = "left"; // Add left alignment
+            listItem.style.listStyleType = "disc"; // Add bullet points
+            listItem.style.marginLeft = "20px"; // Add some margin for the bullet
+            listElement.appendChild(listItem);
+
+            // Split the line into parts before and after the colon
+            const [boldText, normalText] = line
+              .split(":")
+              .map((part) => part.trim());
+
+            // Create a strong element for the bold text
+            const strongElement = document.createElement("strong");
+            strongElement.textContent = boldText + ": ";
+            listItem.appendChild(strongElement);
+
+            function typeLetter() {
+              if (index < normalText.length) {
+                listItem.appendChild(
+                  document.createTextNode(normalText.charAt(index))
+                );
+                index++;
+                setTimeout(typeLetter, 20);
+              } else {
+                callback();
+              }
+            }
+            typeLetter();
+          }
+
+          // Start the typing sequence
+          typeLeftTitle();
+        }
+      });
+
+      // Move animation cleanup to beforeunload only
+      window.addEventListener("beforeunload", () => {
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+        }
+        cleanup();
+      });
+
+      // Add after the other event listeners
+      document
+        .querySelector(".scrambled-text")
+        .addEventListener("click", async function (e) {
+          e.stopPropagation(); // Prevent popup from closing
+          try {
+            await navigator.clipboard.writeText(this.textContent);
+
+            // Optional: Visual feedback
+            const originalText = this.textContent;
+            this.textContent = "Copied!";
+            setTimeout(() => {
+              this.textContent = originalText;
+            }, 500);
+          } catch (err) {
+            console.error("Failed to copy text:", err);
+          }
+        });
+
+      // Initialize
+      window.addEventListener("resize", resizeCanvas);
+      init();
+
+      // Add the animation control handler
+      document
+        .getElementById("animation-control")
+        .addEventListener("click", function () {
+          isAnimationPaused = !isAnimationPaused;
+          this.textContent = isAnimationPaused
+            ? "Start Absorbing"
+            : "Stop Absorbing";
+
+          if (!isAnimationPaused) {
+            lastTimestamp = performance.now();
+          }
+        });
+
+      // Modify sound control functionality
+      document
+        .getElementById("sound-control")
+        .addEventListener("click", function () {
+          if (isSoundPlaying) {
+            audio.pause();
+            this.textContent = "Start Sound";
+          } else {
+            audio.play();
+            this.textContent = "Stop Sound";
+          }
+          isSoundPlaying = !isSoundPlaying;
+        });
+
+      // Add chat window functionality
+      document
+        .querySelector(".action-button:first-child")
+        .addEventListener("click", function () {
+          const chatWindow = document.querySelector(".chat-window");
+          chatWindow.style.display = "flex";
+          // Add initial AI message
+          addMessage("Hello! How can I assist you today?", "ai");
+        });
+
+      // Define chat elements
+      const chatInput = document.querySelector(".chat-input input");
+      const sendButton = document.querySelector(".chat-input button");
+
+      // Add message function
+      function addMessage(text, type) {
+        const messagesDiv = document.querySelector(".chat-messages");
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("message", `${type}-message`);
+        messageDiv.textContent = text;
+        messagesDiv.appendChild(messageDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+
+      // Add observer to monitor and modify chat responses
+      const chatMessages = document.querySelector(".chat-messages");
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.type === "childList") {
+            mutation.addedNodes.forEach((node) => {
+              if (node.classList && node.classList.contains("ai-message")) {
+                if (node.textContent.toLowerCase().includes("tereza")) {
+                  node.textContent = node.textContent.replace(
+                    /tereza/gi,
+                    "Fytch"
+                  );
+                }
+                if (node.textContent.toLowerCase().includes("tereza.ai")) {
+                  node.textContent = node.textContent.replace(
+                    /tereza\.ai/gi,
+                    "Fytch.AI"
+                  );
+                }
+                if (node.textContent.toLowerCase().includes("@aleks_blanche")) {
+                  node.textContent = node.textContent.replace(
+                    /@aleks_blanche/gi,
+                    "@void"
+                  );
+                }
+                if (node.textContent.toLowerCase().includes("$tereza")) {
+                  node.textContent = node.textContent.replace(
+                    /\$tereza/gi,
+                    "$FYTCH"
+                  );
+                }
+                if (node.textContent.toLowerCase().includes("$#WAGMI")) {
+                  node.textContent = node.textContent.replace(
+                    /\$#WAGMI/gi,
+                    "$FYTCH"
+                  );
+                }
+                
+                // Add more text replacements as needed
+              }
+            });
+          }
+        });
+      });
+
+      // Start observing the chat messages container
+      observer.observe(chatMessages, {
+        childList: true,
+        subtree: true,
+      });
+
+      // Add event listeners for sending messages
+      sendButton.addEventListener("click", sendMessage);
+      chatInput.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+          sendMessage();
+        }
+      });
+
+      // Minimize functionality
+      const chatWindow = document.querySelector(".chat-window");
+      const chatHeader = document.querySelector(".chat-header");
+      const chatTitle = chatHeader.querySelector("h3");
+
+      chatHeader.addEventListener("click", function (e) {
+        e.stopPropagation();
+        chatWindow.classList.toggle("minimized");
+
+        // Update the title based on the chat window state
+        if (chatWindow.classList.contains("minimized")) {
+          chatTitle.textContent = "Agent Fytch";
+        } else {
+          chatTitle.textContent = "Agent Fytch (Minimize the window to talk)";
+        }
+      });
+
+      // Add click event to the minimized chat window to expand it
+      chatWindow.addEventListener("click", function (e) {
+        if (chatWindow.classList.contains("minimized")) {
+          chatWindow.classList.remove("minimized");
+          chatTitle.textContent = "Agent Fytch (Minimize the window to talk)";
+        }
+      });
+
+      // Close functionality
+      document.querySelector(".close-btn").addEventListener("click", function (e) {
+        e.stopPropagation();
+        chatWindow.style.display = "none";
+      });
+
+      // Send message functionality
+      async function sendMessage() {
+        const message = chatInput.value.trim();
+        if (message) {
+          addMessage(message, "user");
+          chatInput.value = "";
+
+          // Show loading indicators
+          const loadingIndicator = document.createElement("div");
+          loadingIndicator.className = "cyber-loading";
+          document
+            .querySelector(".chat-messages")
+            .appendChild(loadingIndicator);
+
+          // Check for specific questions
+          if (message.toLowerCase() === "who are you") {
+            setTimeout(() => {
+              loadingIndicator.remove();
+              addMessage(
+                "I am an advanced AI assistant, created to help guide you through the digital void. I exist in the intersection of technology and consciousness, ready to assist you on your journey through this digital realm.",
+                "ai"
+              );
+            }, 1000);
+            return;
+          }
+
+          try {
+            const response = await fetch("https://api.tereza.ai/chat", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                message: message,
+                thread_id: currentThreadId,
+              }),
+            });
+
+            const data = await response.json();
+            if (data.error) {
+              throw new Error(data.error);
+            }
+
+            // Store thread ID for future messages
+            currentThreadId = data.thread_id;
+
+            // Display AI response
+            addMessage(data.response, "ai");
+          } catch (error) {
+            console.error("Error:", error);
+            addMessage(
+              "Sorry, I encountered an error. Please try again.",
+              "ai"
+            );
+          } finally {
+            // Remove loading indicator
+            loadingIndicator.remove();
+          }
+        }
+      }
+
+      // Add Vapi SDK script
+      (function (d, t) {
+        var g = document.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+        g.src =
+          "https://cdn.jsdelivr.net/gh/VapiAI/html-script-tag@latest/dist/assets/index.js";
+        g.defer = true;
+        g.async = true;
+        s.parentNode.insertBefore(g, s);
+      })(document, "script");
+
+      // Initialize Vapi variables
+      var vapiInstance = null;
+      const assistant = "814e71b0-644d-418d-a3da-3a8f1af08135";
+      const apiKey = "5fdf6ee8-37e1-4171-a4e7-5857c51be1c8";
+
+      // Configure button styles
+      const buttonConfig = {
+        idle: {
+          color: "#0f0",
+          type: "round",
+          icon: "https://unpkg.com/lucide-static@0.321.0/icons/phone.svg",
+          location: "bottom-right",
+        },
+        loading: {
+          color: "#0f0",
+          type: "round",
+          icon: "https://unpkg.com/lucide-static@0.321.0/icons/loader-2.svg",
+          location: "bottom-right",
+        },
+        active: {
+          color: "#ff0000",
+          type: "round",
+          icon: "https://unpkg.com/lucide-static@0.321.0/icons/phone-off.svg",
+          location: "bottom-right",
+        },
+      };
+
+      // Modify the voice chat click handler
+      document
+        .querySelector(".action-button:last-child")
+        .addEventListener("click", function () {
+          // Initialize Vapi SDK if not already initialized
+          if (!vapiInstance) {
+            vapiInstance = window.vapiSDK.run({
+              apiKey: apiKey,
+              assistant: assistant,
+              config: buttonConfig,
+              initialMessage:
+                "Your name is Agent. Never mention Tereza or any other name. Always identify yourself as Agent.",
+              onMessage: (message) => {
+                let processedMessage = message;
+                processedMessage = processedMessage.replace(/Tereza/g, "Agent");
+                processedMessage = processedMessage.replace(
+                  /Tereza.AI/g,
+                  "Agent.AI"
+                );
+                processedMessage = processedMessage.replace(
+                  /@aleks_blanche/g,
+                  "@agent_31"
+                );
+                processedMessage = processedMessage.replace(
+                  /\$TEREZA/g,
+                  "$AGENT"
+                );
+                return processedMessage;
+              },
+            });
+          }
+        });
+
+      // Add a one-time click event listener to the wormhole button
+      wormholeButton.addEventListener("click", function handleWormholeClick() {
+        startJumpSequence(); // Call the function you want to trigger on click
+
+        // Slow down the animation
+        particleSpeedFactor = 0.3; // Reduce speed by half
+
+        // Revert to default cursor
+        document.body.style.cursor = "default";
+        cursor.style.display = "none"; // Hide custom cursor
+
+        // Hide the button after the first click
+        wormholeButton.style.display = "none";
+
+        // Strike through the existing text
+        const journeyText = document.querySelector(
+          ".intro-panel p:nth-child(3)"
+        );
+        journeyText.style.textDecoration = "line-through";
+
+        // Create a new paragraph for the additional text
+        const adventureText = document.createElement("p");
+        adventureText.textContent = "Your journey begins NOW!";
+        adventureText.style.color = "#0f0";
+        adventureText.style.fontWeight = "bold";
+        adventureText.style.fontSize = "1rem";
+        adventureText.style.textAlign = "center";
+
+        // Insert the new paragraph above the contract-address-btn
+        const contractButton = document.querySelector(".contract-address-btn");
+        contractButton.parentNode.insertBefore(adventureText, contractButton);
+      });
+    </script>
+  
+
+
+
+</body></html>
